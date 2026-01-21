@@ -7,6 +7,7 @@ class giochino(arcade.Window):
 
         self.background = None
         self.lista_background = arcade.SpriteList()
+        self.setup()
 
     def setup(self):
 
@@ -14,9 +15,9 @@ class giochino(arcade.Window):
 
     def wallpaper(self):
         self.background=arcade.Sprite("./assets/background.png")
-        self.background.center_x = 600
-        self.background.center_y = 600
-        self.background.scale = 4
+        self.background.center_x = 300
+        self.background.center_y = 300
+        self.background.scale = 1
         self.lista_background.append(self.background)
 
     def on_draw(self):
