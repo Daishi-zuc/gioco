@@ -13,6 +13,7 @@ class giochino(arcade.Window):
         self.down_pressed = False
         self.left_pressed = False
         self.right_pressed = False
+        self.camera = arcade.camera.Camera2D()
 
         self.velocita = 5
 
@@ -37,13 +38,16 @@ class giochino(arcade.Window):
 
     def on_draw(self):
         self.clear()
+        self.camera.use()
         self.lista_background.draw()
         self.lista_character.draw()
+        
 
     def on_update(self, delta_time):
         # Calcola movimento in base ai tasti premuti
         change_x = 0
         change_y = 0
+        self.camera.position = self.character.position
 
         if self.up_pressed:
             change_y += self.velocita
