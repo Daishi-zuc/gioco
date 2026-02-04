@@ -13,9 +13,13 @@ class giochino(arcade.Window):
         self.down_pressed = False
         self.left_pressed = False
         self.right_pressed = False
-        self.camera = arcade.camera.Camera2D()
+        self.camera = arcade.camera.Camera2D()  
 
         self.velocita = 5
+
+        #self.physics_engine = arcade.PhysicsEnginePlatformer(
+            #self.character, walls=self.wall_list, gravity_constant=10
+        #)
 
         self.setup()
 
