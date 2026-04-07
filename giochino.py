@@ -78,14 +78,25 @@ class giochino(arcade.Window):
 
         if self.left_pressed and not self.right_pressed:
             self.character.change_x = -self.velocita
-            self.character.scale = (1, 1)
+            self.character.scale = (-1, 1)
         elif self.right_pressed and not self.left_pressed:
             self.character.change_x = self.velocita
-            self.character.scale = (-1, 1)
+            self.character.scale = (1, 1)
 
         if self.physics_engine:
             self.physics_engine.update()
 
+        # --- Logica delle animazioni ---         <-- stessa indentazione del resto
+        if self.character.change_y > 0:
+            self.character.imposta_animazione("salto")
+        elif self.character.change_y < -1:
+            self.character.imposta_animazione("caduta")
+        elif self.character.change_x != 0:
+            self.character.imposta_animazione("corsa")
+        else:
+            self.character.imposta_animazione("idle")
+
+        # Telecamera
         if self.character.right > self.larghezza_livello:
             self.character.right = self.larghezza_livello
         cam_x = self.character.center_x
