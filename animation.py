@@ -2,7 +2,7 @@ from SpriteAnimato import SpriteAnimato
 
 class ANIMATION(SpriteAnimato):
     def __init__(self):
-        super().__init__(scala=0.2)
+        super().__init__(scala=0.6)
         self.aggiungi_animazione(
             nome="idle",
             percorso="assets/Colour2/NoOutline/120x80_PNGSheets/_Idle.png",
