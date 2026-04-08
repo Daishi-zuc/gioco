@@ -72,9 +72,42 @@ class giochino(arcade.Window):
         self.lista_background.draw()
         self.lista_character.draw()
 
+<<<<<<< HEAD
     
+=======
+    def on_update(self, delta_time):
+        self.character.change_x = 0
+        self.character.update_animation(delta_time)
 
-    def on_key_press(self, tasto, modificatori):
+        if self.left_pressed and not self.right_pressed:
+            self.character.change_x = -self.velocita
+            self.character.scale = (-1, 1)
+        elif self.right_pressed and not self.left_pressed:
+            self.character.change_x = self.velocita
+            self.character.scale = (1, 1)
+
+        if self.physics_engine:
+            self.physics_engine.update()
+
+        if self.character.change_y > 0:
+            self.character.imposta_animazione("jump")
+        elif self.character.change_y < -1:
+            self.character.imposta_animazione("fall")
+        elif self.character.change_x != 0:
+            self.character.imposta_animazione("run")
+        else:
+            self.character.imposta_animazione("idle")
+
+        # Telecamera
+        if self.character.right > self.larghezza_livello:
+            self.character.right = self.larghezza_livello
+        cam_x = self.character.center_x
+        cam_y = self.pavimento_y + (self.height / 3) * (1 / self.camera.zoom)
+        self.camera.position = (cam_x, cam_y)
+>>>>>>> d1b8b91d0ca3f3980f6d2730241e0faba09190b3
+
+
+    def on_key_press(self, tasto : arcade.key, modificatori):
         match tasto:
             case arcade.key.UP | arcade.key.W | arcade.key.SPACE:
                 if self.physics_engine.can_jump():
@@ -94,6 +127,7 @@ class giochino(arcade.Window):
                 self.camera.zoom += 0.1
             case arcade.key.M:
                 self.camera.zoom -= 0.1
+
 
 def main():
     gioco = giochino(800, 800, "Mago Platformer")
