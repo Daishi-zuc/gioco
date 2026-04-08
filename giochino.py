@@ -124,6 +124,7 @@ class giochino(arcade.Window):
             case arcade.key.M:
                 self.camera.zoom -= 0.1
 
+
 def main():
     gioco = giochino(800, 800, "Mago Platformer")
     arcade.run()
