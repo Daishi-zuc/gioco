@@ -72,36 +72,7 @@ class giochino(arcade.Window):
         self.lista_background.draw()
         self.lista_character.draw()
 
-    def on_update(self, delta_time):
-        self.character.change_x = 0
-        self.character.update_animation(delta_time)
-
-        if self.left_pressed and not self.right_pressed:
-            self.character.change_x = -self.velocita
-            self.character.scale = (-1, 1)
-        elif self.right_pressed and not self.left_pressed:
-            self.character.change_x = self.velocita
-            self.character.scale = (1, 1)
-
-        if self.physics_engine:
-            self.physics_engine.update()
-
-        # --- Logica delle animazioni ---         <-- stessa indentazione del resto
-        if self.character.change_y > 0:
-            self.character.imposta_animazione("salto")
-        elif self.character.change_y < -1:
-            self.character.imposta_animazione("caduta")
-        elif self.character.change_x != 0:
-            self.character.imposta_animazione("corsa")
-        else:
-            self.character.imposta_animazione("idle")
-
-        # Telecamera
-        if self.character.right > self.larghezza_livello:
-            self.character.right = self.larghezza_livello
-        cam_x = self.character.center_x
-        cam_y = self.pavimento_y + (self.height / 2) * (1 / self.camera.zoom)
-        self.camera.position = (cam_x, cam_y)
+    
 
     def on_key_press(self, tasto, modificatori):
         match tasto:
