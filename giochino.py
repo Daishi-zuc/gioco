@@ -86,13 +86,12 @@ class giochino(arcade.Window):
         if self.physics_engine:
             self.physics_engine.update()
 
-        # --- Logica delle animazioni ---         <-- stessa indentazione del resto
         if self.character.change_y > 0:
-            self.character.imposta_animazione("salto")
+            self.character.imposta_animazione("jump")
         elif self.character.change_y < -1:
-            self.character.imposta_animazione("caduta")
+            self.character.imposta_animazione("fall")
         elif self.character.change_x != 0:
-            self.character.imposta_animazione("corsa")
+            self.character.imposta_animazione("run")
         else:
             self.character.imposta_animazione("idle")
 
@@ -100,10 +99,11 @@ class giochino(arcade.Window):
         if self.character.right > self.larghezza_livello:
             self.character.right = self.larghezza_livello
         cam_x = self.character.center_x
-        cam_y = self.pavimento_y + (self.height / 2) * (1 / self.camera.zoom)
+        cam_y = self.pavimento_y + (self.height / 3) * (1 / self.camera.zoom)
         self.camera.position = (cam_x, cam_y)
 
-    def on_key_press(self, tasto, modificatori):
+
+    def on_key_press(self, tasto : arcade.key, modificatori):
         match tasto:
             case arcade.key.UP | arcade.key.W | arcade.key.SPACE:
                 if self.physics_engine.can_jump():
