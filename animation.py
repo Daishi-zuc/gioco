@@ -39,3 +39,12 @@ class ANIMATION(SpriteAnimato):
             durata=0.6,
             loop=False
         )
+
+        self.aggiungi_animazione(
+            nome="attack",
+            percorso="assets/Colour2/NoOutline/120x80_PNGSheets/_AttackCombo.png",
+            frame_width=120, frame_height=80,
+            num_frame=10, colonne=10,
+            durata=0.35,          
+            loop=False
+        )

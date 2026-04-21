@@ -8,6 +8,7 @@ class SpriteAnimato(arcade.Sprite):
         self.animazione_default = None
         self.tempo_frame = 0.0
         self.indice_frame = 0
+        self._appena_finita      = False
 
     def aggiungi_animazione(self, nome, percorso, frame_width, frame_height, num_frame, colonne, durata, loop=True, default=False, riga=0):
         sheet = arcade.load_spritesheet(percorso)
@@ -44,6 +45,15 @@ class SpriteAnimato(arcade.Sprite):
         elif anim["loop"]:
             self.indice_frame = 0
         else:
+            
+            self._appena_finita = True
             self._vai(self.animazione_default)
             return
+ 
         self.texture = anim["textures"][self.indice_frame]
+
+    def animazione_finita(self, nome: str) -> bool:
+        if not self._appena_finita:
+            return False
+        self._appena_finita = False   # consuma il flag
+        return True
