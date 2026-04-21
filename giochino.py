@@ -2,9 +2,15 @@ import arcade
 from animation import ANIMATION
 from Nemico import NemicoPattuglia, NemicoInseguitore
 
-PLAYER_VITA_MAX = 5
+PLAYER_VITA_MAX = 100
 IFRAMES = 1.5
 
+SPAWN_INTERVALLO   = 4.0    # secondi tra uno spawn e il successivo
+SPAWN_MAX_NEMICI   = 15     # max num nemici
+SPAWN_DISTANZA_MIN = 600    # min pixel davanti/dietro al player
+SPAWN_DISTANZA_MAX = 1200   # max pixel davanti/dietro al player
+
+   
 STATO_MENU     = "menu"
 STATO_GIOCO    = "gioco"
 STATO_GAMEOVER = "gameover"
@@ -15,8 +21,8 @@ class giochino(arcade.Window):
 
         self.larghezza_livello = 100000
         self.GRAVITY = 0.2
-        self.PLAYER_JUMP_SPEED = 10
-        self.velocita = 10
+        self.PLAYER_JUMP_SPEED = 8
+        self.velocita = 5
 
         self.pavimento_y = 1
         self.pavimento_x_start = 500
@@ -30,6 +36,9 @@ class giochino(arcade.Window):
         self.lista_proiettili_player  = None
 
         self.camera = arcade.camera.Camera2D()
+
+        self.camera_ui = arcade.camera.Camera2D()
+
         self.left_pressed = False
         self.right_pressed = False
 
@@ -40,27 +49,25 @@ class giochino(arcade.Window):
 
         self._attacco_attivo  = False   # True durante l'animazione di attacco
         self._attacco_fatto   = False   # True se il danno è già stato applicato
+        self._spawn_timer     = SPAWN_INTERVALLO
+ 
 
         self._sound_attacco = None
         try:
-            self._sound_attacco = arcade.load_sound(":resources:sounds/hurt5.wav")
+            self._sound_attacco = arcade.load_sound("dragon-studio-sword-slice-393847.mp3")
         except Exception:
             pass  # asset mancante – il gioco va lo stesso perchè si
  
         self.stato = STATO_MENU
  
-        # ── sfondo: texture caricata una volta sola ───────────────────────
         self._bg_texture        = None
         self._bg_scala          = 1.0
         self._bg_larghezza_pezzo = 0
  
         self._precarica_sfondo()
- 
-
         self.setup()
-
+ 
     def _precarica_sfondo(self):
-        """Carica la texture e calcola la scala una sola volta."""
         self._bg_texture         = arcade.load_texture("./assets/background.png")
         self._bg_scala           = self.height / self._bg_texture.height
         self._bg_larghezza_pezzo = self._bg_texture.width * self._bg_scala
@@ -72,8 +79,6 @@ class giochino(arcade.Window):
         così non ci sono mai zone nere ai lati.
         """
         self.lista_background = arcade.SpriteList()
- 
-        # Copri da leggermente prima dello schermo fino alla fine del livello
         x_bg = 0.0
         fine  = self.larghezza_livello + self._bg_larghezza_pezzo
  
@@ -131,42 +136,55 @@ class giochino(arcade.Window):
         self.lista_character.append(self.character)    
 
     def _spawn_nemici(self):
-        posizioni_pattuglia = [
-            (self.pavimento_x_start + 500,  self.pavimento_y + 64),
-            (self.pavimento_x_start + 900,  self.pavimento_y + 64),
-            (self.pavimento_x_start + 1400, self.pavimento_y + 64),
-        ]
-        posizioni_inseguitore = [
-            (self.pavimento_x_start + 700,  self.pavimento_y + 64),
-            (self.pavimento_x_start + 1200, self.pavimento_y + 64),
-        ]
- 
-        for x, y in posizioni_pattuglia:
-            n = NemicoPattuglia(x, y)
+        
+        import random
+        for i in range(3):
+            x = self.pavimento_x_start + 400 + i * 300
+            y = self.pavimento_y + 64
+            n = NemicoPattuglia(x, y) if i % 2 == 0 else NemicoInseguitore(x, y)
             n.lista_proiettili = self.lista_proiettili_nemici
             self.lista_nemici.append(n)
  
-        for x, y in posizioni_inseguitore:
-            n = NemicoInseguitore(x, y)
-            n.lista_proiettili = self.lista_proiettili_nemici
-            self.lista_nemici.append(n)    
-
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.character,
             walls=self.wall_list,
             gravity_constant=self.GRAVITY
         )
 
+    def _spawn_nemico_casuale(self):
+
+        import random
+        if len(self.lista_nemici) >= SPAWN_MAX_NEMICI:
+            return
+ 
+        # Scegli un lato (davanti o dietro) e una distanza casuale
+        direzione = random.choice([-1, 1])
+        dist = random.randint(SPAWN_DISTANZA_MIN, SPAWN_DISTANZA_MAX)
+        x = self.character.center_x + direzione * dist
+ 
+        # Clamp dentro i limiti del livello
+        x = max(self.pavimento_x_start + 64, min(x, self.larghezza_livello - 64))
+        y = self.pavimento_y + 64
+ 
+        tipo = random.choice([NemicoPattuglia, NemicoInseguitore])
+        n = tipo(x, y)
+        n.lista_proiettili = self.lista_proiettili_nemici
+        self.lista_nemici.append(n)
+
     def on_draw(self):
         self.clear()
 
         if self.stato == STATO_MENU:
+            self.camera_ui.use()
             self._disegna_menu()
         elif self.stato == STATO_GIOCO:
             self._disegna_gioco()
         elif self.stato == STATO_GAMEOVER:
-            self._disegna_gioco()          # mostra il livello dietro
+            self._disegna_gioco() 
+            self.camera_ui.use()
+                     
             self._disegna_gameover()
+            
         
     def _disegna_gioco(self):
         self.camera.use()
@@ -175,15 +193,16 @@ class giochino(arcade.Window):
         self.lista_proiettili_nemici.draw()
         self.lista_proiettili_player.draw()
         self.lista_character.draw()
+
+        self.camera_ui.use()
         self._disegna_vita()
 
     def _disegna_vita(self):
-        cam_l = self.camera.position[0] - self.width / 2
-        cam_t = self.camera.position[1] + self.height / 2
-        x0, y0 = cam_l + 20, cam_t - 30
+
+        x0, y0 = 20, self.height - 12
         larghezza_barra = 150
         altezza_barra = 18
- 
+
         # sfondo rosso
         arcade.draw_lrbt_rectangle_filled(
             x0, x0 + larghezza_barra,
@@ -222,7 +241,7 @@ class giochino(arcade.Window):
  
         # Titolo
         arcade.draw_text(
-            "MAGO PLATFORMER",
+            "CAVALIERE PLATFORMER",
             cx, cy + 120,
             arcade.color.GOLD, 48,
             anchor_x="center", anchor_y="center",
@@ -231,7 +250,7 @@ class giochino(arcade.Window):
  
         # Sottotitolo
         arcade.draw_text(
-            "Un'avventura magica",
+            "progetto per scuola",
             cx, cy + 60,
             arcade.color.LIGHT_BLUE, 20,
             anchor_x="center", anchor_y="center"
@@ -338,33 +357,38 @@ class giochino(arcade.Window):
         
     def on_update(self, delta_time):
 
-        if self.stato != STATO_GIOCO:   # ← aggiungi qui
+        if self.stato != STATO_GIOCO:   
             return
     
         self.character.change_x = 0
         self.character.update_animation(delta_time)
 
-        if self.left_pressed and not self.right_pressed:
-            self.character.change_x = -self.velocita
-            self.character.scale = (-1, 1)
-        elif self.right_pressed and not self.left_pressed:
-            self.character.change_x = self.velocita
-            self.character.scale = (1, 1)
 
-        else:
-            self.character.change_x = 0   # fermo durante l'attacco
+        if not self._attacco_attivo:
+            if self.left_pressed and not self.right_pressed:
+                self.character.change_x = -self.velocita
+                self.character.scale = (-1, 1)
+            elif self.right_pressed and not self.left_pressed:
+                self.character.change_x = self.velocita
+                self.character.scale = (1, 1)
+
+            else:
+                self.character.change_x = 0   # fermo durante l'attacco
+
+            if self.physics_engine:
+                self.physics_engine.update()    
 
         if self.physics_engine:
             self.physics_engine.update()
-
-        if self.character.change_y > 0:
-            self.character.imposta_animazione("jump")
-        elif self.character.change_y < -1:
-            self.character.imposta_animazione("fall")
-        elif self.character.change_x != 0:
-            self.character.imposta_animazione("run")
-        else:
-            self.character.imposta_animazione("idle")
+        if not self._attacco_attivo:
+            if self.character.change_y > 0:
+                self.character.imposta_animazione("jump")
+            elif self.character.change_y < -1:
+                self.character.imposta_animazione("fall")
+            elif self.character.change_x != 0:
+                self.character.imposta_animazione("run")
+            else:
+                self.character.imposta_animazione("idle")
 
         if self._attacco_attivo and self.character.animazione_finita("attack"):
             self._attacco_attivo = False
@@ -395,7 +419,13 @@ class giochino(arcade.Window):
                         nemico.subisci_danno(1)
                     else:
                         nemico.morto = True
-                    break     
+                    break    
+
+        # ── Spawn continuo nemici ─────────────────────────────────────────
+        self._spawn_timer -= delta_time
+        if self._spawn_timer <= 0:
+            self._spawn_timer = SPAWN_INTERVALLO
+            self._spawn_nemico_casuale()         
 
         # --- Nemici ---    
 
@@ -412,7 +442,7 @@ class giochino(arcade.Window):
             if arcade.check_for_collision_with_list(p, self.wall_list):
                 p.remove_from_sprite_lists()
  
-        # --- Collisioni player ← nemici (contatto) ---
+        # ── Danni al player ───────────────────────────────────────────────
         self._iframe_timer = max(0.0, self._iframe_timer - delta_time)
         if self._iframe_timer == 0:
             colpiti = arcade.check_for_collision_with_list(
@@ -421,7 +451,6 @@ class giochino(arcade.Window):
             if colpiti:
                 self._subisci_danno(1)
  
-        # --- Collisioni player ← proiettili ---
         if self._iframe_timer == 0:
             colpiti_p = arcade.check_for_collision_with_list(
                 self.character, self.lista_proiettili_nemici
@@ -429,7 +458,7 @@ class giochino(arcade.Window):
             for p in colpiti_p:
                 p.remove_from_sprite_lists()
                 self._subisci_danno(1)
-                break    
+                break   
 
         # Telecamera
         if self.character.right > self.larghezza_livello:
@@ -437,7 +466,7 @@ class giochino(arcade.Window):
  
         cam_x = self.character.center_x
         
-        cam_y = self.pavimento_y + (self.height / 3) * (1 / self.camera.zoom)
+        cam_y = self.pavimento_y + (self.height / 2) * (1 / self.camera.zoom)
         self.camera.position = (cam_x, cam_y)   
 
 
